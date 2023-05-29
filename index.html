@@ -5,42 +5,45 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bingo-rilla</title>
-    <link rel="shortcut icon" href="https://fav.farm/🦍" type="image/x-icon">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="https://fav.farm/🦍" type="image/x-icon" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      form {
+        display: grid;
+        gap: 1rem;
+      }
+
+      form label {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      input, select, textarea {
+        font: inherit;
+      }
+    </style>
   </head>
   <body>
     <main>
       <h1>Bingo-rilla</h1>
-      <ul></ul>
-      <form>
-        <input name="phrase" type="text" />
-        <button>Add</button>
+      <form action="play.html">
+        <label>
+          <b>Phrases</b>
+          <small>One per line</small>
+          <textarea name="phrases" rows="10"></textarea>
+        </label>
+        <label>
+          <b>Board size</b>
+          <select name="size">
+            <option value="3">3x3</option>
+            <option value="5">5x5</option>
+          </select>
+        </label>
+        <button>Play</button>
       </form>
-      <a id="play" href="/play.html">Play</a>
     </main>
     <script>
-      const ul = document.querySelector("ul");
-      const form = document.querySelector("form");
-      const input = document.querySelector("input");
-      const playLink = document.querySelector("#play");
-
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        ul.innerHTML += `<li>${data.get("phrase")}</li>`;
-        e.target.reset();
-        input.focus();
-      });
-
-      playLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        let list = "";
-        for (const li of ul.querySelectorAll("li")) {
-          list += li.textContent + ",";
-        }
-        localStorage.removeItem("state");
-        location.href = `/play.html?list=${list.slice(0, list.length - 1)}`;
-      });
+      // You love to see it.
     </script>
   </body>
 </html>

@@ -8,16 +8,34 @@
     <link rel="shortcut icon" href="https://fav.farm/🦍" type="image/x-icon" />
     <link rel="stylesheet" href="styles.css" />
     <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
       #board {
+        --size: 3;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(3, 1fr);
+        flex: 1;
+        grid-template-columns: repeat(var(--size), 1fr);
+        grid-template-rows: repeat(var(--size), 1fr);
+        height: 100%;
+      }
+      #board[data-size="5"] {
+        --size: 5;
       }
       #board > * {
         align-items: center;
+        border: 1px solid hsla(0, 0%, 0%, 0.1);
         display: flex;
-        height: 20vh;
+        font-size: small;
         justify-content: center;
+        padding: 0.5rem;
         text-align: center;
       }
       input[type="checkbox"] {
@@ -46,10 +64,11 @@
     <script>
       (() => {
         const usp = new URLSearchParams(location.search);
-        let list = usp.get("list");
+        let phrases = usp.get("phrases");
         let seed = usp.get("seed");
+        const size = usp.get("size");
 
-        if (!list) {
+        if (!phrases || !phrases.length) {
           return (location.href = "index.html");
         }
 
@@ -57,12 +76,16 @@
           seed = ["a", "b", "c", "d", "e", "f", "g", "h"][
             Math.floor(Math.random() * 8)
           ];
-          location.replace(`/play.html?list=${list}&seed=${seed}`);
+          const url = new URL(location.href);
+          url.searchParams.set("seed", seed);
+          history.replaceState(history.state, "", url.href);
         }
 
-        list = list.split(",");
+        let list = phrases.split("\n").map((p) => p.replace("\r", ""));
 
-        while (list.length < 8) {
+        const cellCount = size == "3" ? 9 : 25;
+
+        while (list.length < cellCount) {
           list.push(...list);
         }
 
@@ -71,25 +94,32 @@
         const state = JSON.parse(localStorage.getItem("state") || "{}");
 
         const board = document.querySelector("#board");
-        const html = list.slice(0, 8).reduce((acc, phrase, i) => {
-          const id = i <= 3 ? i + 1 : i + 2;
-          if (i === 4) {
-            acc += "<span id='free'>Free</span>";
-          }
-          return (
-            acc +
-            `<label>
+        board.dataset.size = size;
+
+        const half = Math.floor(cellCount / 2);
+        const listWithFree = list
+          .slice(0, half)
+          .concat("%FREE%", list.slice(half + 1));
+        const html = listWithFree
+          .slice(0, cellCount)
+          .reduce((acc, phrase, i) => {
+            const id = i + 1;
+            if (phrase === "%FREE%") {
+              return acc + `<div id="free">FREE</div>`;
+            }
+            return (
+              acc +
+              `<label>
                 <input ${
                   !!state[id] ? "checked" : ""
                 } name="${id}" type="checkbox" value="${phrase}">
                 <span>${phrase}</span>
             </label>`
-          );
-        }, "");
+            );
+          }, "");
         board.innerHTML = html;
 
         document.addEventListener("change", (e) => {
-          // check if e.target is checkbox
           if (e.target.type !== "checkbox") return;
 
           const checked = e.target.checked;
@@ -103,53 +133,58 @@
         });
 
         function winCheck(state) {
-          const {
-            1: $1,
-            2: $2,
-            3: $3,
-            4: $4,
-            6: $6,
-            7: $7,
-            8: $8,
-            9: $9,
-          } = state;
-          console.log({ $1, $2, $3, $4, $6, $7, $8, $9 });
-          if (
-            // x x x
-            // - X -
-            // - - -
-            ($1 && $2 && $3) ||
-            // x - -
-            // x X -
-            // x - -
-            ($1 && $4 && $7) ||
-            // x - -
-            // - X -
-            // - - x
-            ($1 && $9) ||
-            // - x -
-            // - X -
-            // - x -
-            ($2 && $8) ||
-            // - - x
-            // - X x
-            // - - x
-            ($3 && $6 && $9) ||
-            // - - x
-            // - X -
-            // x - -
-            ($3 && $7) ||
-            // - - -
-            // x X x
-            // - - -
-            ($4 && $6) ||
-            // - - -
-            // - X -
-            // x x x
-            ($7 && $8 && $9)
-          ) {
-            return true;
-          } else {
+          if (size == "3") {
+            const {
+              1: $1,
+              2: $2,
+              3: $3,
+              4: $4,
+              6: $6,
+              7: $7,
+              8: $8,
+              9: $9,
+            } = state;
+            console.log({ $1, $2, $3, $4, $6, $7, $8, $9 });
+            if (
+              // x x x
+              // - F -
+              // - - -
+              ($1 && $2 && $3) ||
+              // x - -
+              // x F -
+              // x - -
+              ($1 && $4 && $7) ||
+              // x - -
+              // - F -
+              // - - x
+              ($1 && $9) ||
+              // - x -
+              // - F -
+              // - x -
+              ($2 && $8) ||
+              // - - x
+              // - F x
+              // - - x
+              ($3 && $6 && $9) ||
+              // - - x
+              // - F -
+              // x - -
+              ($3 && $7) ||
+              // - - -
+              // x F x
+              // - - -
+              ($4 && $6) ||
+              // - - -
+              // - F -
+              // x x x
+              ($7 && $8 && $9)
+            ) {
+              return true;
+            } else {
+              return false;
+            }
+          } else if (size == "5") {
+            // TODO: implement win check
             return false;
           }
         }
